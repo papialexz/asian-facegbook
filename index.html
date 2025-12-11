@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exclusive Video Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .header p {
+            color: #aaa;
+            font-size: 18px;
+        }
+        
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .video-card {
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .video-preview-container {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+        
+        .video-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.8);
+            transition: transform 0.3s ease;
+        }
+        
+        .video-card:hover .video-thumbnail {
+            transform: scale(1.05);
+        }
+        
+        .play-button-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 0, 0, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .video-card:hover .play-button-overlay {
+            background: rgba(255, 0, 0, 1);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        .play-button-overlay::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 10px 0 10px 20px;
+            border-color: transparent transparent transparent white;
+            margin-left: 5px;
+        }
+        
+        .video-info {
+            padding: 20px;
+        }
+        
+        .video-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .video-description {
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .video-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        /* Ad Overlay */
+        .ad-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .ad-container {
+            width: 90%;
+            max-width: 800px;
+            height: 500px;
+            background: #111;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #bestlockerIframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .ad-loading {
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .ad-header {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .ad-instructions {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 14px;
+            padding: 0 20px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .videos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>Exclusive Video Collection</h1>
+        <p>Click any video to watch - Complete offer to unlock</p>
+    </div>
+    
+    <!-- Video Grid -->
+    <div class="videos-grid" id="videosGrid">
+        <!-- Video cards are loaded dynamically by JavaScript -->
+    </div>
+    
+    <!-- Ad Overlay -->
+    <div class="ad-overlay" id="adOverlay">
+        <div class="ad-header">Complete the offer to watch the video</div>
+        <div class="ad-loading" id="adLoading">Loading offer...</div>
+        <div class="ad-container" id="adContainer">
+            <!-- BestLocker iframe will be loaded here -->
+        </div>
+        <div class="ad-instructions" id="instructions">Complete the offer to unlock the video</div>
+    </div>
+
+    <script>
+        // ============================================
+        // VIDEO DATA - Your 4 video links are added here
+        // ============================================
+        const videos = [
+            {
+                id: 1,
+                title: "EBWH-203: The Busty, Elegant Wife and Esthetician",
+                description: "Miyamoto Rui succumbs to arousal in front of a large client.",
+                thumbnail: "https://cdn.javmiku.com/wp-content/uploads/2025/12/ebwh203pl-550x374.jpg",
+                videoUrl: "https://jav.guru/829896/ebwh-203-mr-the-busty-elegant-wife-and-esthetician-trained-to-crave-big-cocks-due-to-her-ex-boyfriend-succumbs-to-arousal-in-front-of-a-large-client-miyamoto-rui/"
+            },
+            {
+                id: 2,
+                title: "EBWH-195: Unfaithful Days with Two Big-Breasted Coworkers",
+                description: "Alternating cheating sex with Miyamoto Rui and Kitano Mina.",
+                thumbnail: "https://cdn.javmiku.com/wp-content/uploads/2025/12/ebwh195pl-550x374.jpg",
+                videoUrl: "https://jav.guru/829897/ebwh-195-mr-unfaithful-days-of-alternating-cheating-sex-with-two-big-breasted-coworkers-who-have-completely-opposite-personalities-miyamoto-rui-and-kitano-mina/"
+            },
+            {
+                id: 3,
+                title: "NACT-007: Next to My Drunken Husband...",
+                description: "Taken both body and soul by husband's boss, Futaba Sara.",
+                thumbnail: "https://cdn.javmiku.com/wp-content/uploads/2025/12/h_237nact007pl-550x374.jpg",
+                videoUrl: "https://jav.guru/829846/nact-007-mr-next-to-my-drunken-husband-i-was-taken-both-body-and-soul-by-my-husbands-boss-futaba-sara/"
+            },
+            {
+                id: 4,
+                title: "NGOD-288: Married Woman with Strong Desire for Immediate Sex",
+                description: "Cheating sex encounter featuring Miyanishi Hikaru.",
+                thumbnail: "https://cdn.javmiku.com/wp-content/uploads/2025/12/ngod288pl-550x374.jpg",
+                videoUrl: "https://jav.guru/829844/ngod-288-mr-a-married-woman-with-a-strong-desire-for-immediate-sex-and-a-short-term-affair-a-cheating-sex-encounter-with-a-large-penis-for-those-who-want-to-get-straight-to-it-featuring-miyanishi/"
+            }
+        ];
+        
+        // Configuration
+        const BESTLOCKER_IFRAME_URL = "https://bestlocker.eu/iframe/e037dbaa-d468-11f0-bc23-8a5fb7be40ea";
+        
+        // Elements
+        const videosGrid = document.getElementById('videosGrid');
+        const adOverlay = document.getElementById('adOverlay');
+        const adContainer = document.getElementById('adContainer');
+        const adLoading = document.getElementById('adLoading');
+        const instructions = document.getElementById('instructions');
+        
+        // Variables
+        let offerCompleted = false;
+        let selectedVideoUrl = null; // This will store the JAV.GURU link to open after offer
+        
+        // Initialize videos grid
+        function initializeVideos() {
+            videosGrid.innerHTML = '';
+            
+            videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.dataset.videoUrl = video.videoUrl;
+                
+                videoCard.innerHTML = `
+                    <div class="video-preview-container">
+                        <span class="video-number">Video ${video.id}</span>
+                        <img src="${video.thumbnail}" alt="${video.title}" class="video-thumbnail">
+                        <div class="play-button-overlay"></div>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-title">${video.title}</div>
+                        <div class="video-description">${video.description}</div>
+                    </div>
+                `;
+                
+                videoCard.addEventListener('click', () => playVideoHandler(video.videoUrl, video.title));
+                videosGrid.appendChild(videoCard);
+            });
+        }
+        
+        // Handle video play click
+        function playVideoHandler(videoUrl, videoTitle) {
+            selectedVideoUrl = videoUrl;
+            
+            // Show ad overlay
+            adOverlay.style.display = 'flex';
+            adLoading.style.display = 'block';
+            instructions.textContent = `Complete the offer to watch: ${videoTitle}`;
+            instructions.style.color = '#fff';
+            
+            // Load the BestLocker iframe
+            loadBestLockerIframe();
+        }
+        
+        // Load BestLocker iframe
+        function loadBestLockerIframe() {
+            adContainer.innerHTML = '';
+            offerCompleted = false;
+            
+            const iframe = document.createElement('iframe');
+            iframe.id = 'bestlockerIframe';
+            iframe.src = BESTLOCKER_IFRAME_URL;
+            iframe.allowFullscreen = true;
+            
+            iframe.onload = function() {
+                console.log('BestLocker iframe loaded');
+                adLoading.style.display = 'none';
+                startCompletionCheck();
+            };
+            
+            iframe.onerror = function() {
+                console.log('Failed to load BestLocker iframe');
+                adLoading.textContent = 'Error loading offer. Please refresh.';
+            };
+            
+            adContainer.appendChild(iframe);
+        }
+        
+        // Check for offer completion
+        function startCompletionCheck() {
+            window.addEventListener('message', handleIframeMessage, false);
+            
+            let lastIframeSrc = BESTLOCKER_IFRAME_URL;
+            const checkInterval = setInterval(() => {
+                const iframe = document.getElementById('bestlockerIframe');
+                if (iframe) {
+                    try {
+                        const currentSrc = iframe.src;
+                        if (currentSrc !== lastIframeSrc) {
+                            console.log('Iframe URL changed:', currentSrc);
+                            lastIframeSrc = currentSrc;
+                            
+                            if (currentSrc.includes('success') || 
+                                currentSrc.includes('completed') || 
+                                currentSrc.includes('verified')) {
+                                completeOffer();
+                                clearInterval(checkInterval);
+                            }
+                        }
+                    } catch (e) {
+                        // CORS error
+                    }
+                }
+                
+                if (offerCompleted) {
+                    clearInterval(checkInterval);
+                }
+            }, 1000);
+        }
+        
+        // Handle iframe messages
+        function handleIframeMessage(event) {
+            console.log('Message from iframe:', event.data);
+            
+            if (event.data === 'offerCompleted' || 
+                event.data === 'completed' || 
+                event.data === 'success' ||
+                (typeof event.data === 'object' && event.data.status === 'completed')) {
+                completeOffer();
+            }
+        }
+        
+        // Handle offer completion
+        function completeOffer() {
+            if (!offerCompleted && selectedVideoUrl !== null) {
+                offerCompleted = true;
+                
+                instructions.textContent = 'Offer completed! Opening video...';
+                instructions.style.color = '#00ff00';
+                
+                setTimeout(() => {
+                    openVideoPage();
+                }, 1500);
+            }
+        }
+        
+        // Open the JAV.GURU video page in a new tab
+        function openVideoPage() {
+            // Hide ad overlay
+            adOverlay.style.display = 'none';
+            
+            // Open the video URL in a new tab
+            window.open(selectedVideoUrl, '_blank');
+            
+            // Reset for next video selection
+            selectedVideoUrl = null;
+            offerCompleted = false;
+        }
+        
+        // Prevent closing ad overlay
+        adOverlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        // Prevent ESC key from closing ad
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && adOverlay.style.display === 'flex') {
+                e.preventDefault();
+                instructions.style.color = '#ff4444';
+                instructions.textContent = 'Complete the offer to watch the video';
+                
+                setTimeout(() => {
+                    instructions.style.color = '#fff';
+                }, 1000);
+            }
+        });
+        
+        // Initialize the page
+        initializeVideos();
+        
+        // ============================================
+        // TESTING FEATURE - REMOVE THIS IN PRODUCTION!
+        // ============================================
+        const testDiv = document.createElement('div');
+        testDiv.style.position = 'fixed';
+        testDiv.style.bottom = '10px';
+        testDiv.style.right = '10px';
+        testDiv.style.zIndex = '9999';
+        testDiv.style.display = 'flex';
+        testDiv.style.gap = '5px';
+        testDiv.style.flexDirection = 'column';
+        
+        const testBtn = document.createElement('button');
+        testBtn.style.padding = '10px';
+        testBtn.style.background = '#333';
+        testBtn.style.color = '#fff';
+        testBtn.style.border = 'none';
+        testBtn.style.borderRadius = '5px';
+        testBtn.style.cursor = 'pointer';
+        testBtn.addEventListener('click', () => {
+            if (selectedVideoUrl !== null) {
+                completeOffer();
+            } else {
+                alert('Click a video first to select it');
+            }
+        });
+        
+        const resetBtn = document.createElement('button');
+        resetBtn.style.padding = '10px';
+        resetBtn.style.background = '#555';
+        resetBtn.style.color = '#fff';
+        resetBtn.style.border = 'none';
+        resetBtn.style.borderRadius = '5px';
+        resetBtn.style.cursor = 'pointer';
+        resetBtn.addEventListener('click', () => {
+            selectedVideoUrl = null;
+            offerCompleted = false;
+            alert('Selection reset. Click a video to test again.');
+        });
+        
+        testDiv.appendChild(testBtn);
+        testDiv.appendChild(resetBtn);
+        document.body.appendChild(testDiv);
+    </script>
+</body>
+</html>
